@@ -1,72 +1,30 @@
 using Nop.Core;
+using Nop.Data;
 using Nop.Plugin.Shipping.SteadFast.Domain;
-using Nop.Plugin.Shipping.SteadFast.Models.Api;
 
 namespace Nop.Plugin.Shipping.SteadFast.Services;
 
 /// <summary>
-/// Represents SteadFast service implementation (facade)
+/// Represents SteadFast shipment record service implementation
 /// </summary>
-public class SteadFastService : ISteadFastService
+public class SteadFastShipmentRecordService : ISteadFastShipmentRecordService
 {
     #region Fields
 
-    private readonly ISteadFastApiClient _apiClient;
-    private readonly ISteadFastShipmentRecordService _shipmentRecordService;
+    private readonly IRepository<SteadFastShipmentRecord> _shipmentRecordRepository;
 
     #endregion
 
     #region Ctor
 
-    public SteadFastService(
-        ISteadFastApiClient apiClient,
-        ISteadFastShipmentRecordService shipmentRecordService)
+    public SteadFastShipmentRecordService(IRepository<SteadFastShipmentRecord> shipmentRecordRepository)
     {
-        _apiClient = apiClient;
-        _shipmentRecordService = shipmentRecordService;
+        _shipmentRecordRepository = shipmentRecordRepository;
     }
 
     #endregion
 
     #region Methods
-
-    /// <summary>
-    /// Create order on SteadFast
-    /// </summary>
-    /// <param name="request">Create order request</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the create order response
-    /// </returns>
-    public virtual async Task<CreateOrderResponse> CreateOrderAsync(CreateOrderRequest request)
-    {
-        return await _apiClient.CreateOrderAsync(request);
-    }
-
-    /// <summary>
-    /// Get balance from SteadFast
-    /// </summary>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the balance response
-    /// </returns>
-    public virtual async Task<GetBalanceResponse> GetBalanceAsync()
-    {
-        return await _apiClient.GetBalanceAsync();
-    }
-
-    /// <summary>
-    /// Get status by consignment ID
-    /// </summary>
-    /// <param name="consignmentId">Consignment ID</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the status response
-    /// </returns>
-    public virtual async Task<StatusByConsignmentIdResponse> GetStatusByConsignmentIdAsync(string consignmentId)
-    {
-        return await _apiClient.GetStatusByConsignmentIdAsync(consignmentId);
-    }
 
     /// <summary>
     /// Insert a SteadFast shipment record
@@ -75,7 +33,9 @@ public class SteadFastService : ISteadFastService
     /// <returns>A task that represents the asynchronous operation</returns>
     public virtual async Task InsertShipmentRecordAsync(SteadFastShipmentRecord shipmentRecord)
     {
-        await _shipmentRecordService.InsertShipmentRecordAsync(shipmentRecord);
+        ArgumentNullException.ThrowIfNull(shipmentRecord);
+
+        await _shipmentRecordRepository.InsertAsync(shipmentRecord);
     }
 
     /// <summary>
@@ -85,7 +45,9 @@ public class SteadFastService : ISteadFastService
     /// <returns>A task that represents the asynchronous operation</returns>
     public virtual async Task UpdateShipmentRecordAsync(SteadFastShipmentRecord shipmentRecord)
     {
-        await _shipmentRecordService.UpdateShipmentRecordAsync(shipmentRecord);
+        ArgumentNullException.ThrowIfNull(shipmentRecord);
+
+        await _shipmentRecordRepository.UpdateAsync(shipmentRecord);
     }
 
     /// <summary>
@@ -98,7 +60,11 @@ public class SteadFastService : ISteadFastService
     /// </returns>
     public virtual async Task<SteadFastShipmentRecord> GetShipmentRecordByShipmentIdAsync(int shipmentId)
     {
-        return await _shipmentRecordService.GetShipmentRecordByShipmentIdAsync(shipmentId);
+        if (shipmentId == 0)
+            return null;
+
+        return await _shipmentRecordRepository.Table
+            .FirstOrDefaultAsync(x => x.ShipmentId == shipmentId);
     }
 
     /// <summary>
@@ -111,7 +77,11 @@ public class SteadFastService : ISteadFastService
     /// </returns>
     public virtual async Task<SteadFastShipmentRecord> GetShipmentRecordByOrderIdAsync(int orderId)
     {
-        return await _shipmentRecordService.GetShipmentRecordByOrderIdAsync(orderId);
+        if (orderId == 0)
+            return null;
+
+        return await _shipmentRecordRepository.Table
+            .FirstOrDefaultAsync(x => x.OrderId == orderId);
     }
 
     /// <summary>
@@ -131,7 +101,17 @@ public class SteadFastService : ISteadFastService
         int pageIndex = 0,
         int pageSize = int.MaxValue)
     {
-        return await _shipmentRecordService.GetAllShipmentRecordsAsync(orderId, consignmentId, pageIndex, pageSize);
+        var query = _shipmentRecordRepository.Table;
+
+        if (orderId.HasValue && orderId.Value > 0)
+            query = query.Where(x => x.OrderId == orderId.Value);
+
+        if (!string.IsNullOrEmpty(consignmentId))
+            query = query.Where(x => x.ConsignmentId == consignmentId);
+
+        query = query.OrderByDescending(x => x.CreatedOnUtc);
+
+        return await query.ToPagedListAsync(pageIndex, pageSize);
     }
 
     #endregion
