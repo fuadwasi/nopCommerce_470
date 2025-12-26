@@ -1,3 +1,4 @@
+using Nop.Core;
 using Nop.Plugin.Shipping.SteadFast.Domain;
 using Nop.Plugin.Shipping.SteadFast.Models.Api;
 

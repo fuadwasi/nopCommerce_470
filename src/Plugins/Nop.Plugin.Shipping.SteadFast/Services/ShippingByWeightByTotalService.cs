@@ -157,7 +157,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
         }
 
         //load all records to cache
-        var key = "Nop.Plugin.Shipping.SteadFast.ShippingByWeightByTotal.All";
+        var key = new Nop.Core.Caching.CacheKey("Nop.Plugin.Shipping.SteadFast.ShippingByWeightByTotal.All");
         var allRecords = await _staticCacheManager.GetAsync(key, async () => await _shippingByWeightByTotalRepository.GetAllAsync(query => query));
 
         zip ??= string.Empty;

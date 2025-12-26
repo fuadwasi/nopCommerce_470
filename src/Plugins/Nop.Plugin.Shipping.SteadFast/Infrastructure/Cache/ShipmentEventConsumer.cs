@@ -3,9 +3,11 @@ using Nop.Core.Events;
 using Nop.Plugin.Shipping.SteadFast.Domain;
 using Nop.Plugin.Shipping.SteadFast.Models.Api;
 using Nop.Plugin.Shipping.SteadFast.Services;
+using Nop.Services.Common;
 using Nop.Services.Events;
 using Nop.Services.Orders;
 using Nop.Services.Logging;
+using Nop.Services.Shipping;
 
 namespace Nop.Plugin.Shipping.SteadFast.Infrastructure.Cache;
 
@@ -20,6 +22,8 @@ public class ShipmentEventConsumer : IConsumer<EntityInsertedEvent<Shipment>>
     private readonly IOrderService _orderService;
     private readonly ILogger _logger;
     private readonly SteadFastSettings _steadFastSettings;
+    private readonly IAddressService _addressService;
+    private readonly IShipmentService _shipmentService;
 
     #endregion
 
@@ -29,12 +33,16 @@ public class ShipmentEventConsumer : IConsumer<EntityInsertedEvent<Shipment>>
         ISteadFastService steadFastService,
         IOrderService orderService,
         ILogger logger,
-        SteadFastSettings steadFastSettings)
+        SteadFastSettings steadFastSettings,
+        IAddressService addressService,
+        IShipmentService shipmentService)
     {
         _steadFastService = steadFastService;
         _orderService = orderService;
         _logger = logger;
         _steadFastSettings = steadFastSettings;
+        _addressService = addressService;
+        _shipmentService = shipmentService;
     }
 
     #endregion
@@ -71,13 +79,21 @@ public class ShipmentEventConsumer : IConsumer<EntityInsertedEvent<Shipment>>
 
         try
         {
+            //get shipping address
+            var shippingAddress = await _addressService.GetAddressByIdAsync(order.ShippingAddressId ?? 0);
+            if (shippingAddress == null)
+            {
+                await _logger.ErrorAsync($"SteadFast: No shipping address found for order {order.Id}");
+                return;
+            }
+
             //prepare request
             var request = new CreateOrderRequest
             {
                 Invoice = $"{DateTime.UtcNow:yyMMdd}-{order.Id}",
-                RecipientName = $"{order.ShippingAddress?.FirstName} {order.ShippingAddress?.LastName}",
-                RecipientPhone = order.ShippingAddress?.PhoneNumber ?? "",
-                RecipientAddress = $"{order.ShippingAddress?.Address1}, {order.ShippingAddress?.City}-{order.ShippingAddress?.ZipPostalCode}",
+                RecipientName = $"{shippingAddress.FirstName} {shippingAddress.LastName}",
+                RecipientPhone = shippingAddress.PhoneNumber ?? "",
+                RecipientAddress = $"{shippingAddress.Address1}, {shippingAddress.City}-{shippingAddress.ZipPostalCode}",
                 CodAmount = order.OrderTotal,
                 Note = _steadFastSettings.DefaultNote ?? ""
             };
@@ -110,7 +126,7 @@ public class ShipmentEventConsumer : IConsumer<EntityInsertedEvent<Shipment>>
             if (response.Status == 200 && !string.IsNullOrEmpty(response.Consignment?.TrackingCode))
             {
                 shipment.TrackingNumber = response.Consignment.TrackingCode;
-                await _orderService.UpdateShipmentAsync(shipment);
+                await _shipmentService.UpdateShipmentAsync(shipment);
             }
         }
         catch (Exception ex)

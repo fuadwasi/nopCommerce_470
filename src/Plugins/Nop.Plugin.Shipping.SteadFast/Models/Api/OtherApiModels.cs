@@ -1,11 +1,9 @@
-using Nop.Web.Framework.Models;
-
 namespace Nop.Plugin.Shipping.SteadFast.Models.Api;
 
 /// <summary>
 /// Represents a get balance response model
 /// </summary>
-public class GetBalanceResponse : BaseNopModel
+public class GetBalanceResponse
 {
     /// <summary>
     /// Gets or sets the status code
@@ -26,7 +24,7 @@ public class GetBalanceResponse : BaseNopModel
 /// <summary>
 /// Represents a status by consignment ID response model
 /// </summary>
-public class StatusByConsignmentIdResponse : BaseNopModel
+public class StatusByConsignmentIdResponse
 {
     /// <summary>
     /// Gets or sets the status code

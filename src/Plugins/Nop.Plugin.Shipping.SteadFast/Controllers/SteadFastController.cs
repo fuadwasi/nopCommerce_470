@@ -3,6 +3,7 @@ using Nop.Core;
 using Nop.Plugin.Shipping.SteadFast.Models.Admin;
 using Nop.Plugin.Shipping.SteadFast.Models.Api;
 using Nop.Plugin.Shipping.SteadFast.Services;
+using Nop.Services.Common;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
@@ -29,6 +30,7 @@ public class SteadFastController : BasePluginController
     private readonly IOrderService _orderService;
     private readonly IStoreContext _storeContext;
     private readonly IWorkContext _workContext;
+    private readonly IAddressService _addressService;
 
     #endregion
 
@@ -42,7 +44,8 @@ public class SteadFastController : BasePluginController
         ISteadFastService steadFastService,
         IOrderService orderService,
         IStoreContext storeContext,
-        IWorkContext workContext)
+        IWorkContext workContext,
+        IAddressService addressService)
     {
         _localizationService = localizationService;
         _notificationService = notificationService;
@@ -52,6 +55,7 @@ public class SteadFastController : BasePluginController
         _orderService = orderService;
         _storeContext = storeContext;
         _workContext = workContext;
+        _addressService = addressService;
     }
 
     #endregion
@@ -218,6 +222,11 @@ public class SteadFastController : BasePluginController
             if (order == null)
                 return Json(new { success = false, message = "Order not found" });
 
+            //get shipping address
+            var shippingAddress = await _addressService.GetAddressByIdAsync(order.ShippingAddressId ?? 0);
+            if (shippingAddress == null)
+                return Json(new { success = false, message = "Shipping address not found" });
+
             //check if shipment already exists
             var existingShipment = await _steadFastService.GetShipmentRecordByOrderIdAsync(orderId);
             if (existingShipment != null)
@@ -227,9 +236,9 @@ public class SteadFastController : BasePluginController
             var request = new CreateOrderRequest
             {
                 Invoice = $"{DateTime.UtcNow:yyMMdd}-{order.Id}",
-                RecipientName = $"{order.ShippingAddress?.FirstName} {order.ShippingAddress?.LastName}",
-                RecipientPhone = order.ShippingAddress?.PhoneNumber ?? "",
-                RecipientAddress = $"{order.ShippingAddress?.Address1}, {order.ShippingAddress?.City}-{order.ShippingAddress?.ZipPostalCode}",
+                RecipientName = $"{shippingAddress.FirstName} {shippingAddress.LastName}",
+                RecipientPhone = shippingAddress.PhoneNumber ?? "",
+                RecipientAddress = $"{shippingAddress.Address1}, {shippingAddress.City}-{shippingAddress.ZipPostalCode}",
                 CodAmount = order.OrderTotal,
                 Note = ""
             };

@@ -1,11 +1,9 @@
-using Nop.Web.Framework.Models;
-
 namespace Nop.Plugin.Shipping.SteadFast.Models.Api;
 
 /// <summary>
 /// Represents a create order request model
 /// </summary>
-public class CreateOrderRequest : BaseNopModel
+public class CreateOrderRequest
 {
     /// <summary>
     /// Gets or sets the invoice number
@@ -41,7 +39,7 @@ public class CreateOrderRequest : BaseNopModel
 /// <summary>
 /// Represents a create order response model
 /// </summary>
-public class CreateOrderResponse : BaseNopModel
+public class CreateOrderResponse
 {
     /// <summary>
     /// Gets or sets the status code
@@ -67,7 +65,7 @@ public class CreateOrderResponse : BaseNopModel
 /// <summary>
 /// Represents consignment data
 /// </summary>
-public class ConsignmentData : BaseNopModel
+public class ConsignmentData
 {
     /// <summary>
     /// Gets or sets the consignment ID
