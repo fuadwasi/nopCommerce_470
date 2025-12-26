@@ -3,9 +3,9 @@ using Nop.Core;
 namespace Nop.Plugin.Shipping.SteadFast.Domain;
 
 /// <summary>
-/// Represents a shipping by weight record
+/// Represents a SteadFast shipping by weight and by total record
 /// </summary>
-public class ShippingByWeightByTotalRecord : BaseEntity
+public class SteadFastShippingByWeightByTotalRecord : BaseEntity
 {
     /// <summary>
     /// Gets or sets the store identifier

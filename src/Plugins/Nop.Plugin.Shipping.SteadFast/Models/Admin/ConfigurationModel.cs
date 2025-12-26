@@ -31,6 +31,14 @@ public record ConfigurationModel : BaseNopModel
     [NopResourceDisplayName("Plugins.Shipping.SteadFast.Fields.LimitMethodsToCreated")]
     public bool LimitMethodsToCreated { get; set; }
 
+    [NopResourceDisplayName("Plugins.Shipping.SteadFast.Fields.WebhookEnabled")]
+    public bool WebhookEnabled { get; set; }
+
+    [NopResourceDisplayName("Plugins.Shipping.SteadFast.Fields.WebhookSecret")]
+    public string WebhookSecret { get; set; }
+
+    public string WebhookUrl { get; set; }
+
     public decimal? CurrentBalance { get; set; }
 
     #endregion

@@ -1,20 +1,23 @@
+using Microsoft.AspNetCore.Routing;
 using Nop.Core;
 using Nop.Core.Domain.Shipping;
 using Nop.Plugin.Shipping.SteadFast.Domain;
 using Nop.Plugin.Shipping.SteadFast.Services;
+using Nop.Services.Cms;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Orders;
 using Nop.Services.Plugins;
 using Nop.Services.Shipping;
 using Nop.Services.Shipping.Tracking;
+using Nop.Web.Framework.Infrastructure;
 
 namespace Nop.Plugin.Shipping.SteadFast;
 
 /// <summary>
 /// SteadFast shipping computation method
 /// </summary>
-public class SteadFastComputationMethod : BasePlugin, IShippingRateComputationMethod
+public class SteadFastComputationMethod : BasePlugin, IShippingRateComputationMethod, IWidgetPlugin
 {
     #region Fields
 
@@ -90,7 +93,7 @@ public class SteadFastComputationMethod : BasePlugin, IShippingRateComputationMe
     /// <param name="subTotal">Subtotal</param>
     /// <param name="weight">Weight</param>
     /// <returns>Rate</returns>
-    protected decimal GetRate(ShippingByWeightByTotalRecord shippingByWeightByTotalRecord, decimal subTotal, decimal weight)
+    protected decimal GetRate(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord, decimal subTotal, decimal weight)
     {
         //additional fixed cost
         var shippingTotal = shippingByWeightByTotalRecord.AdditionalFixedCost;
@@ -360,6 +363,37 @@ public class SteadFastComputationMethod : BasePlugin, IShippingRateComputationMe
 
         await base.UninstallAsync();
     }
+
+    #endregion
+
+    #region IWidgetPlugin
+
+    /// <summary>
+    /// Gets widget zones where this widget should be rendered
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the widget zones
+    /// </returns>
+    public Task<IList<string>> GetWidgetZonesAsync()
+    {
+        return Task.FromResult<IList<string>>(new List<string> { AdminWidgetZones.OrderShipmentDetailsButtons });
+    }
+
+    /// <summary>
+    /// Gets a type of a view component for displaying widget
+    /// </summary>
+    /// <param name="widgetZone">Name of the widget zone</param>
+    /// <returns>View component type</returns>
+    public Type GetWidgetViewComponent(string widgetZone)
+    {
+        return typeof(Components.SteadFastShipmentDetailsViewComponent);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether to hide this plugin on the widget list page in the admin area
+    /// </summary>
+    public bool HideInWidgetList => true;
 
     #endregion
 }

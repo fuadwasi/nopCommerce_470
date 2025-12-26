@@ -24,6 +24,11 @@ public class RouteProvider : IRouteProvider
             name: SteadFastDefaults.ShipmentListRouteName,
             pattern: "Admin/SteadFast/ShipmentList",
             defaults: new { controller = "SteadFast", action = "ShipmentList" });
+
+        endpointRouteBuilder.MapControllerRoute(
+            name: SteadFastDefaults.WebhookRouteName,
+            pattern: SteadFastDefaults.WEBHOOK_PATH,
+            defaults: new { controller = "SteadFastWebhook", action = "WebhookHandler" });
     }
 
     /// <summary>

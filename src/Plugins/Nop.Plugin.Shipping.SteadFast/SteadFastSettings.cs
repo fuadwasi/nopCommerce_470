@@ -46,4 +46,14 @@ public class SteadFastSettings : ISettings
     /// Gets or sets default note for shipments
     /// </summary>
     public string DefaultNote { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether webhook is enabled
+    /// </summary>
+    public bool WebhookEnabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets the webhook secret for verification
+    /// </summary>
+    public string WebhookSecret { get; set; }
 }
