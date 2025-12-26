@@ -18,6 +18,8 @@ public class NopStartup : INopStartup
     /// <param name="configuration">Configuration of the application</param>
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
+        services.AddScoped<ISteadFastApiClient, SteadFastApiClient>();
+        services.AddScoped<ISteadFastShipmentRecordService, SteadFastShipmentRecordService>();
         services.AddScoped<ISteadFastService, SteadFastService>();
         services.AddScoped<IShippingByWeightByTotalService, ShippingByWeightByTotalService>();
         services.AddHttpClient();
