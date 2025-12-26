@@ -70,6 +70,38 @@
                     <span asp-validation-for="LimitMethodsToCreated"></span>
                 </div>
             </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="WebhookEnabled" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="WebhookEnabled" />
+                    <span asp-validation-for="WebhookEnabled"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="WebhookSecret" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="WebhookSecret" />
+                    <span asp-validation-for="WebhookSecret"></span>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.WebhookUrl))
+            {
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <label class="col-form-label">Webhook URL</label>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="form-text-row">
+                            <input type="text" readonly class="form-control" value="@Model.WebhookUrl" onclick="this.select()" />
+                            <small class="form-text text-muted">Copy this URL and add it to your SteadFast merchant portal webhook settings.</small>
+                        </div>
+                    </div>
+                </div>
+            }
             @if (Model.CurrentBalance.HasValue)
             {
                 <div class="form-group row">

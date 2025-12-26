@@ -12,7 +12,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
 {
     #region Fields
 
-    private readonly IRepository<ShippingByWeightByTotalRecord> _shippingByWeightByTotalRepository;
+    private readonly IRepository<SteadFastShippingByWeightByTotalRecord> _shippingByWeightByTotalRepository;
     private readonly IStaticCacheManager _staticCacheManager;
     private readonly SteadFastSettings _steadFastSettings;
 
@@ -21,7 +21,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
     #region Ctor
 
     public ShippingByWeightByTotalService(
-        IRepository<ShippingByWeightByTotalRecord> shippingByWeightByTotalRepository,
+        IRepository<SteadFastShippingByWeightByTotalRecord> shippingByWeightByTotalRepository,
         IStaticCacheManager staticCacheManager,
         SteadFastSettings steadFastSettings)
     {
@@ -39,7 +39,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
     /// </summary>
     /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task InsertShippingByWeightByTotalRecordAsync(ShippingByWeightByTotalRecord shippingByWeightByTotalRecord)
+    public virtual async Task InsertSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord)
     {
         ArgumentNullException.ThrowIfNull(shippingByWeightByTotalRecord);
 
@@ -51,7 +51,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
     /// </summary>
     /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task UpdateShippingByWeightByTotalRecordAsync(ShippingByWeightByTotalRecord shippingByWeightByTotalRecord)
+    public virtual async Task UpdateSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord)
     {
         ArgumentNullException.ThrowIfNull(shippingByWeightByTotalRecord);
 
@@ -63,7 +63,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
     /// </summary>
     /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task DeleteShippingByWeightByTotalRecordAsync(ShippingByWeightByTotalRecord shippingByWeightByTotalRecord)
+    public virtual async Task DeleteSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord)
     {
         ArgumentNullException.ThrowIfNull(shippingByWeightByTotalRecord);
 
@@ -79,7 +79,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
     /// A task that represents the asynchronous operation
     /// The task result contains the shipping by weight/total records
     /// </returns>
-    public virtual async Task<IPagedList<ShippingByWeightByTotalRecord>> GetAllAsync(int pageIndex = 0, int pageSize = int.MaxValue)
+    public virtual async Task<IPagedList<SteadFastShippingByWeightByTotalRecord>> GetAllAsync(int pageIndex = 0, int pageSize = int.MaxValue)
     {
         var records = await _shippingByWeightByTotalRepository.GetAllAsync(query =>
         {
@@ -89,7 +89,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
                    select record;
         });
 
-        return new PagedList<ShippingByWeightByTotalRecord>(records, pageIndex, pageSize);
+        return new PagedList<SteadFastShippingByWeightByTotalRecord>(records, pageIndex, pageSize);
     }
 
     /// <summary>
@@ -107,7 +107,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
     /// A task that represents the asynchronous operation
     /// The task result contains the shipping by weight/total record
     /// </returns>
-    public virtual async Task<ShippingByWeightByTotalRecord> FindRecordsAsync(
+    public virtual async Task<SteadFastShippingByWeightByTotalRecord> FindRecordsAsync(
         int shippingMethodId,
         int storeId,
         int warehouseId,
@@ -191,7 +191,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
     /// A task that represents the asynchronous operation
     /// The task result contains the shipping by weight/total record
     /// </returns>
-    public virtual async Task<ShippingByWeightByTotalRecord> GetByIdAsync(int id)
+    public virtual async Task<SteadFastShippingByWeightByTotalRecord> GetByIdAsync(int id)
     {
         return await _shippingByWeightByTotalRepository.GetByIdAsync(id);
     }

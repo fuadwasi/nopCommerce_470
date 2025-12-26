@@ -21,6 +21,16 @@ public class SteadFastDefaults
     public static string ShipmentListRouteName => "Plugin.Shipping.SteadFast.ShipmentList";
 
     /// <summary>
+    /// Gets the webhook route name
+    /// </summary>
+    public static string WebhookRouteName => "Plugin.Shipping.SteadFast.Webhook";
+
+    /// <summary>
+    /// Gets the webhook path
+    /// </summary>
+    public const string WEBHOOK_PATH = "Plugins/SteadFast/Webhook";
+
+    /// <summary>
     /// Gets the fixed rate settings key
     /// </summary>
     public const string FIXED_RATE_SETTINGS_KEY = "ShippingRateComputationMethod.FixedOrByWeight.Rate.ShippingMethodId{0}";

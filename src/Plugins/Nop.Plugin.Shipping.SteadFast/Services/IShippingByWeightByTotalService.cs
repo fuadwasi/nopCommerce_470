@@ -13,21 +13,21 @@ public interface IShippingByWeightByTotalService
     /// </summary>
     /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    Task InsertShippingByWeightByTotalRecordAsync(ShippingByWeightByTotalRecord shippingByWeightByTotalRecord);
+    Task InsertSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord);
 
     /// <summary>
     /// Update shipping by weight/total record
     /// </summary>
     /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    Task UpdateShippingByWeightByTotalRecordAsync(ShippingByWeightByTotalRecord shippingByWeightByTotalRecord);
+    Task UpdateSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord);
 
     /// <summary>
     /// Delete shipping by weight/total record
     /// </summary>
     /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    Task DeleteShippingByWeightByTotalRecordAsync(ShippingByWeightByTotalRecord shippingByWeightByTotalRecord);
+    Task DeleteSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord);
 
     /// <summary>
     /// Get shipping by weight/total records
@@ -38,7 +38,7 @@ public interface IShippingByWeightByTotalService
     /// A task that represents the asynchronous operation
     /// The task result contains the shipping by weight/total records
     /// </returns>
-    Task<IPagedList<ShippingByWeightByTotalRecord>> GetAllAsync(int pageIndex = 0, int pageSize = int.MaxValue);
+    Task<IPagedList<SteadFastShippingByWeightByTotalRecord>> GetAllAsync(int pageIndex = 0, int pageSize = int.MaxValue);
 
     /// <summary>
     /// Find shipping by weight/total record
@@ -55,7 +55,7 @@ public interface IShippingByWeightByTotalService
     /// A task that represents the asynchronous operation
     /// The task result contains the shipping by weight/total record
     /// </returns>
-    Task<ShippingByWeightByTotalRecord> FindRecordsAsync(
+    Task<SteadFastShippingByWeightByTotalRecord> FindRecordsAsync(
         int shippingMethodId,
         int storeId,
         int warehouseId,
@@ -73,5 +73,5 @@ public interface IShippingByWeightByTotalService
     /// A task that represents the asynchronous operation
     /// The task result contains the shipping by weight/total record
     /// </returns>
-    Task<ShippingByWeightByTotalRecord> GetByIdAsync(int id);
+    Task<SteadFastShippingByWeightByTotalRecord> GetByIdAsync(int id);
 }

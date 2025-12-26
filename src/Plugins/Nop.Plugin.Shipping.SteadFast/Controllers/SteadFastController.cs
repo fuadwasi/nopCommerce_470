@@ -9,6 +9,7 @@ using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Orders;
 using Nop.Services.Security;
+using Nop.Services.Shipping;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
@@ -31,6 +32,8 @@ public class SteadFastController : BasePluginController
     private readonly IStoreContext _storeContext;
     private readonly IWorkContext _workContext;
     private readonly IAddressService _addressService;
+    private readonly ISteadFastShipmentEventLogService _eventLogService;
+    private readonly IShipmentService _shipmentService;
 
     #endregion
 
@@ -45,7 +48,9 @@ public class SteadFastController : BasePluginController
         IOrderService orderService,
         IStoreContext storeContext,
         IWorkContext workContext,
-        IAddressService addressService)
+        IAddressService addressService,
+        ISteadFastShipmentEventLogService eventLogService,
+        IShipmentService shipmentService)
     {
         _localizationService = localizationService;
         _notificationService = notificationService;
@@ -56,6 +61,8 @@ public class SteadFastController : BasePluginController
         _storeContext = storeContext;
         _workContext = workContext;
         _addressService = addressService;
+        _eventLogService = eventLogService;
+        _shipmentService = shipmentService;
     }
 
     #endregion
@@ -78,7 +85,10 @@ public class SteadFastController : BasePluginController
             AutoCreateShipment = settings.AutoCreateShipment,
             DefaultNote = settings.DefaultNote,
             ShippingByWeightByTotalEnabled = settings.ShippingByWeightByTotalEnabled,
-            LimitMethodsToCreated = settings.LimitMethodsToCreated
+            LimitMethodsToCreated = settings.LimitMethodsToCreated,
+            WebhookEnabled = settings.WebhookEnabled,
+            WebhookSecret = settings.WebhookSecret,
+            WebhookUrl = $"{Request.Scheme}://{Request.Host}/{SteadFastDefaults.WEBHOOK_PATH}"
         };
 
         //try to get current balance
@@ -120,6 +130,8 @@ public class SteadFastController : BasePluginController
         settings.DefaultNote = model.DefaultNote;
         settings.ShippingByWeightByTotalEnabled = model.ShippingByWeightByTotalEnabled;
         settings.LimitMethodsToCreated = model.LimitMethodsToCreated;
+        settings.WebhookEnabled = model.WebhookEnabled;
+        settings.WebhookSecret = model.WebhookSecret;
 
         await _settingService.SaveSettingAsync(settings, storeScope);
         await _settingService.ClearCacheAsync();
@@ -316,6 +328,186 @@ public class SteadFastController : BasePluginController
                 success = true,
                 message = "Status updated successfully",
                 status = response.DeliveryStatus
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetShipmentInfo(int shipmentId)
+    {
+        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageOrders))
+            return AccessDeniedView();
+
+        try
+        {
+            var shipment = await _shipmentService.GetShipmentByIdAsync(shipmentId);
+            if (shipment == null)
+                return Json(new { success = false, message = "Shipment not found" });
+
+            var order = await _orderService.GetOrderByIdAsync(shipment.OrderId);
+            if (order == null)
+                return Json(new { success = false, message = "Order not found" });
+
+            var shippingAddress = await _addressService.GetAddressByIdAsync(order.ShippingAddressId ?? 0);
+
+            // Calculate COD amount from shipment items
+            decimal codAmount = 0;
+            var shipmentItems = await _shipmentService.GetShipmentItemsByShipmentIdAsync(shipmentId);
+            foreach (var item in shipmentItems)
+            {
+                var orderItem = await _orderService.GetOrderItemByIdAsync(item.OrderItemId);
+                if (orderItem != null)
+                {
+                    codAmount += orderItem.UnitPriceInclTax * item.Quantity;
+                }
+            }
+
+            return Json(new
+            {
+                success = true,
+                recipientName = shippingAddress != null ? $"{shippingAddress.FirstName} {shippingAddress.LastName}" : "",
+                recipientPhone = shippingAddress?.PhoneNumber ?? "",
+                recipientAddress = shippingAddress != null ? $"{shippingAddress.Address1}, {shippingAddress.City}-{shippingAddress.ZipPostalCode}" : "",
+                codAmount = codAmount,
+                orderId = order.Id
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateShipmentManual(int shipmentId, string recipientName, string recipientPhone, string recipientAddress, decimal codAmount)
+    {
+        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageOrders))
+            return AccessDeniedView();
+
+        try
+        {
+            var shipment = await _shipmentService.GetShipmentByIdAsync(shipmentId);
+            if (shipment == null)
+                return Json(new { success = false, message = "Shipment not found" });
+
+            // Check if already created
+            var existingRecord = await _steadFastService.GetShipmentRecordByShipmentIdAsync(shipmentId);
+            if (existingRecord != null && existingRecord.IsSent)
+                return Json(new { success = false, message = "Shipment already created on SteadFast" });
+
+            var order = await _orderService.GetOrderByIdAsync(shipment.OrderId);
+            
+            // Prepare request
+            var request = new CreateOrderRequest
+            {
+                Invoice = $"{DateTime.UtcNow:yyMMdd}-{order.Id}",
+                RecipientName = recipientName,
+                RecipientPhone = recipientPhone,
+                RecipientAddress = recipientAddress,
+                CodAmount = codAmount,
+                Note = ""
+            };
+
+            // Create order on SteadFast
+            var response = await _steadFastService.CreateOrderAsync(request);
+
+            if (response.Status != 200)
+            {
+                return Json(new { success = false, message = response.Message ?? "Failed to create shipment" });
+            }
+
+            // Save or update shipment record
+            if (existingRecord != null)
+            {
+                existingRecord.ConsignmentId = response.Consignment?.ConsignmentId ?? "";
+                existingRecord.InvoiceNumber = request.Invoice;
+                existingRecord.RecipientName = request.RecipientName;
+                existingRecord.RecipientPhone = request.RecipientPhone;
+                existingRecord.RecipientAddress = request.RecipientAddress;
+                existingRecord.CodAmount = request.CodAmount;
+                existingRecord.DeliveryStatus = response.Consignment?.Status ?? "";
+                existingRecord.TrackingNumber = response.Consignment?.TrackingCode ?? "";
+                existingRecord.IsSent = true;
+                existingRecord.ApiResponse = System.Text.Json.JsonSerializer.Serialize(response);
+                existingRecord.UpdatedOnUtc = DateTime.UtcNow;
+                await _steadFastService.UpdateShipmentRecordAsync(existingRecord);
+            }
+            else
+            {
+                var shipmentRecord = new Domain.SteadFastShipmentRecord
+                {
+                    ShipmentId = shipmentId,
+                    OrderId = order.Id,
+                    ConsignmentId = response.Consignment?.ConsignmentId ?? "",
+                    InvoiceNumber = request.Invoice,
+                    RecipientName = request.RecipientName,
+                    RecipientPhone = request.RecipientPhone,
+                    RecipientAddress = request.RecipientAddress,
+                    CodAmount = request.CodAmount,
+                    Note = request.Note,
+                    DeliveryStatus = response.Consignment?.Status ?? "",
+                    TrackingNumber = response.Consignment?.TrackingCode ?? "",
+                    IsSent = true,
+                    ApiResponse = System.Text.Json.JsonSerializer.Serialize(response),
+                    CreatedOnUtc = DateTime.UtcNow
+                };
+
+                await _steadFastService.InsertShipmentRecordAsync(shipmentRecord);
+            }
+
+            return Json(new
+            {
+                success = true,
+                message = "Shipment created successfully",
+                consignmentId = response.Consignment?.ConsignmentId,
+                trackingNumber = response.Consignment?.TrackingCode
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetShipmentEventLogs(int shipmentId)
+    {
+        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageOrders))
+            return AccessDeniedView();
+
+        try
+        {
+            var logs = await _eventLogService.GetEventLogsByShipmentIdAsync(shipmentId);
+            
+            // Get shipment record for tracking URL
+            var shipmentRecord = await _steadFastService.GetShipmentRecordByShipmentIdAsync(shipmentId);
+            string trackingUrl = "";
+            if (shipmentRecord != null && !string.IsNullOrEmpty(shipmentRecord.TrackingNumber))
+            {
+                trackingUrl = $"https://steadfast.com.bd/t/{shipmentRecord.TrackingNumber}";
+            }
+
+            var logData = logs.Select(log => new
+            {
+                id = log.Id,
+                eventType = log.EventType,
+                oldStatus = log.OldStatus,
+                newStatus = log.NewStatus,
+                statusMessage = log.StatusMessage,
+                createdOn = log.CreatedOnUtc.ToString("yyyy-MM-dd HH:mm:ss")
+            }).ToList();
+
+            return Json(new
+            {
+                success = true,
+                logs = logData,
+                trackingUrl = trackingUrl,
+                consignmentId = shipmentRecord?.ConsignmentId ?? "",
+                isSent = shipmentRecord?.IsSent ?? false
             });
         }
         catch (Exception ex)

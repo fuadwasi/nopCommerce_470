@@ -20,6 +20,7 @@ public class NopStartup : INopStartup
     {
         services.AddScoped<ISteadFastApiClient, SteadFastApiClient>();
         services.AddScoped<ISteadFastShipmentRecordService, SteadFastShipmentRecordService>();
+        services.AddScoped<ISteadFastShipmentEventLogService, SteadFastShipmentEventLogService>();
         services.AddScoped<ISteadFastService, SteadFastService>();
         services.AddScoped<IShippingByWeightByTotalService, ShippingByWeightByTotalService>();
         services.AddHttpClient();
