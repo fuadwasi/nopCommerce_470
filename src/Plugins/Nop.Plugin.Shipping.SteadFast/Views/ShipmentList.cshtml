@@ -1,0 +1,128 @@
+@model ShipmentListModel
+
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">
+        @T("Plugins.Shipping.SteadFast.ManageShipments")
+    </h1>
+    <div class="float-right">
+        <a asp-controller="SteadFast" asp-action="Configure" class="btn btn-primary">
+            <i class="fas fa-arrow-left"></i>
+            @T("Admin.Common.Back")
+        </a>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="form-horizontal">
+            <div class="card card-default">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group row">
+                                <div class="col-md-4">
+                                    <nop-label asp-for="OrderId" />
+                                </div>
+                                <div class="col-md-8">
+                                    <nop-editor asp-for="OrderId" />
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-4">
+                                    <nop-label asp-for="ConsignmentId" />
+                                </div>
+                                <div class="col-md-8">
+                                    <nop-editor asp-for="ConsignmentId" />
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-8 offset-md-4">
+                                    <button type="button" id="search-shipments" class="btn btn-primary btn-search">
+                                        <i class="fas fa-search"></i>
+                                        @T("Admin.Common.Search")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card card-default">
+                <div class="card-body">
+                    @await Html.PartialAsync("Table", new DataTablesModel
+                    {
+                        Name = "shipments-grid",
+                        UrlRead = new DataUrl("ShipmentList", "SteadFast", null),
+                        SearchButtonId = "search-shipments",
+                        Length = 20,
+                        LengthMenu = new List<int> { 10, 20, 50, 100 },
+                        Filters = new List<FilterParameter>
+                        {
+                            new FilterParameter(nameof(ShipmentListModel.OrderId)),
+                            new FilterParameter(nameof(ShipmentListModel.ConsignmentId))
+                        },
+                        ColumnCollection = new List<ColumnProperty>
+                        {
+                            new ColumnProperty(nameof(ShipmentModel.Id))
+                            {
+                                Title = T("Admin.Common.Id").Text,
+                                Width = "50"
+                            },
+                            new ColumnProperty(nameof(ShipmentModel.OrderId))
+                            {
+                                Title = T("Plugins.Shipping.SteadFast.Shipment.OrderId").Text,
+                                Width = "100"
+                            },
+                            new ColumnProperty(nameof(ShipmentModel.ConsignmentId))
+                            {
+                                Title = T("Plugins.Shipping.SteadFast.Shipment.ConsignmentId").Text,
+                                Width = "150"
+                            },
+                            new ColumnProperty(nameof(ShipmentModel.InvoiceNumber))
+                            {
+                                Title = "Invoice",
+                                Width = "120"
+                            },
+                            new ColumnProperty(nameof(ShipmentModel.RecipientName))
+                            {
+                                Title = "Recipient",
+                                Width = "150"
+                            },
+                            new ColumnProperty(nameof(ShipmentModel.RecipientPhone))
+                            {
+                                Title = "Phone",
+                                Width = "120"
+                            },
+                            new ColumnProperty(nameof(ShipmentModel.CodAmount))
+                            {
+                                Title = "COD Amount",
+                                Width = "100"
+                            },
+                            new ColumnProperty(nameof(ShipmentModel.DeliveryStatus))
+                            {
+                                Title = T("Plugins.Shipping.SteadFast.Shipment.Status").Text,
+                                Width = "120"
+                            },
+                            new ColumnProperty(nameof(ShipmentModel.TrackingNumber))
+                            {
+                                Title = T("Plugins.Shipping.SteadFast.Shipment.TrackingNumber").Text,
+                                Width = "150"
+                            },
+                            new ColumnProperty(nameof(ShipmentModel.CreatedOnUtc))
+                            {
+                                Title = T("Plugins.Shipping.SteadFast.Shipment.CreatedOn").Text,
+                                Width = "150",
+                                Render = new RenderDate()
+                            }
+                        }
+                    })
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

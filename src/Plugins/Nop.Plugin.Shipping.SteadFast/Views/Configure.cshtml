@@ -1,0 +1,145 @@
+@model ConfigurationModel
+
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<form asp-controller="SteadFast" asp-action="Configure" method="post">
+    <div class="card card-default">
+        <div class="card-body">
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="ApiKey" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="ApiKey" />
+                    <span asp-validation-for="ApiKey"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="ApiSecretKey" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="ApiSecretKey" asp-template="Password" />
+                    <span asp-validation-for="ApiSecretKey"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="UseSandbox" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="UseSandbox" />
+                    <span asp-validation-for="UseSandbox"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="AutoCreateShipment" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="AutoCreateShipment" />
+                    <span asp-validation-for="AutoCreateShipment"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="DefaultNote" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="DefaultNote" />
+                    <span asp-validation-for="DefaultNote"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="ShippingByWeightByTotalEnabled" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="ShippingByWeightByTotalEnabled" />
+                    <span asp-validation-for="ShippingByWeightByTotalEnabled"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="LimitMethodsToCreated" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="LimitMethodsToCreated" />
+                    <span asp-validation-for="LimitMethodsToCreated"></span>
+                </div>
+            </div>
+            @if (Model.CurrentBalance.HasValue)
+            {
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <label class="col-form-label">Current Balance</label>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="form-text-row">@Model.CurrentBalance.Value.ToString("C")</div>
+                    </div>
+                </div>
+            }
+            <div class="form-group row">
+                <div class="col-md-9 offset-md-3">
+                    <button type="button" id="test-connection" class="btn btn-secondary">
+                        <i class="fas fa-plug"></i>
+                        @T("Plugins.Shipping.SteadFast.TestConnection")
+                    </button>
+                    <button type="submit" name="save" class="btn btn-primary">
+                        <i class="far fa-save"></i>
+                        @T("Admin.Common.Save")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="card card-default">
+    <div class="card-header">
+        @T("Plugins.Shipping.SteadFast.ManageShipments")
+    </div>
+    <div class="card-body">
+        <div class="form-group row">
+            <div class="col-md-12">
+                <a asp-controller="SteadFast" asp-action="ShipmentList" class="btn btn-primary">
+                    <i class="fas fa-list"></i>
+                    @T("Plugins.Shipping.SteadFast.ManageShipments")
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#test-connection').click(function () {
+            var btn = $(this);
+            btn.attr('disabled', 'disabled');
+            
+            $.ajax({
+                url: '@Url.Action("TestConnection", "SteadFast")',
+                type: 'POST',
+                success: function (data) {
+                    if (data.success) {
+                        displaySuccessMessage(data.message);
+                        if (data.balance) {
+                            alert('Balance: ' + data.balance);
+                        }
+                    } else {
+                        displayErrorMessage(data.message);
+                    }
+                },
+                complete: function () {
+                    btn.removeAttr('disabled');
+                },
+                error: function () {
+                    displayErrorMessage('An error occurred while testing the connection.');
+                    btn.removeAttr('disabled');
+                }
+            });
+        });
+    });
+</script>
