@@ -1,3 +1,5 @@
+﻿using Newtonsoft.Json;
+
 namespace Nop.Plugin.Shipping.SteadFast.Models.Api;
 
 /// <summary>
@@ -34,6 +36,9 @@ public class CreateOrderRequest
     /// Gets or sets the note
     /// </summary>
     public string Note { get; set; }
+
+    [JsonProperty(PropertyName = "item_description")]
+    public string ItemDescription { get; set; }
 }
 
 /// <summary>
