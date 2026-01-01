@@ -1,10 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Plugin.Shipping.SteadFast.Models.Admin;
 using Nop.Plugin.Shipping.SteadFast.Models.Api;
 using Nop.Plugin.Shipping.SteadFast.Services;
+using Nop.Services.Catalog;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
+using Nop.Services.Customers;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Orders;
@@ -24,11 +26,13 @@ public class SteadFastController : BasePluginController
     #region Fields
 
     private readonly ILocalizationService _localizationService;
+    private readonly ICustomerService _customerService;
     private readonly INotificationService _notificationService;
     private readonly IPermissionService _permissionService;
     private readonly ISettingService _settingService;
     private readonly ISteadFastService _steadFastService;
     private readonly IOrderService _orderService;
+    private readonly IProductService _productService;
     private readonly IStoreContext _storeContext;
     private readonly IWorkContext _workContext;
     private readonly IAddressService _addressService;
@@ -41,11 +45,13 @@ public class SteadFastController : BasePluginController
 
     public SteadFastController(
         ILocalizationService localizationService,
+        ICustomerService customerService,
         INotificationService notificationService,
         IPermissionService permissionService,
         ISettingService settingService,
         ISteadFastService steadFastService,
         IOrderService orderService,
+        IProductService productService,
         IStoreContext storeContext,
         IWorkContext workContext,
         IAddressService addressService,
@@ -53,11 +59,13 @@ public class SteadFastController : BasePluginController
         IShipmentService shipmentService)
     {
         _localizationService = localizationService;
+        _customerService = customerService;
         _notificationService = notificationService;
         _permissionService = permissionService;
         _settingService = settingService;
         _steadFastService = steadFastService;
         _orderService = orderService;
+        _productService = productService;
         _storeContext = storeContext;
         _workContext = workContext;
         _addressService = addressService;
@@ -247,7 +255,7 @@ public class SteadFastController : BasePluginController
             //prepare request
             var request = new CreateOrderRequest
             {
-                Invoice = $"{DateTime.UtcNow:yyMMdd}-{order.Id}",
+                Invoice = $"{order.CustomOrderNumber}",
                 RecipientName = $"{shippingAddress.FirstName} {shippingAddress.LastName}",
                 RecipientPhone = shippingAddress.PhoneNumber ?? "",
                 RecipientAddress = $"{shippingAddress.Address1}, {shippingAddress.City}-{shippingAddress.ZipPostalCode}",
@@ -400,16 +408,39 @@ public class SteadFastController : BasePluginController
                 return Json(new { success = false, message = "Shipment already created on SteadFast" });
 
             var order = await _orderService.GetOrderByIdAsync(shipment.OrderId);
-            
+            if (order == null)
+                return Json(new { success = false, message = "Order not found" });
+
+            var customer = await _customerService.GetCustomerByIdAsync(order.CustomerId);
+
+            var shipmentItems = await _shipmentService.GetShipmentItemsByShipmentIdAsync(shipmentId);
+            if(shipmentItems == null)
+                return Json(new { success = false, message = "Shipment items not found" });
+
+            var orderItems = await _orderService.GetOrderItemsAsync(order.Id);
+            if (orderItems == null)
+                return Json(new { success = false, message = "Order items not found" });
+
+            var shippedOrderItems = orderItems.Where(oi => shipmentItems.Any(si => si.OrderItemId == oi.Id)).ToList();
+
+            var products = await _productService.GetProductsByIdsAsync(shippedOrderItems.Select(i => i.ProductId).ToArray());
+
+
             // Prepare request
             var request = new CreateOrderRequest
             {
-                Invoice = $"{DateTime.UtcNow:yyMMdd}-{order.Id}",
+                Invoice = $"{order.CustomOrderNumber}-{shipment.Id}",
                 RecipientName = recipientName,
                 RecipientPhone = recipientPhone,
                 RecipientAddress = recipientAddress,
+                RecipientEmail = customer?.Email ?? "",
+                AlternativePhone = customer?.Phone,
                 CodAmount = codAmount,
-                Note = ""
+                Note = "",
+                ItemDescription = products != null && products.Count > 0
+                    ? string.Join(", ", products.Select(p => p.Name).Take(5)) +
+                      (products.Count > 5 ? ", etc." : "")
+                    : ""
             };
 
             // Create order on SteadFast

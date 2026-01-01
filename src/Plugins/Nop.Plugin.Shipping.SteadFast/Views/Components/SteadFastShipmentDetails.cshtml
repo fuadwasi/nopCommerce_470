@@ -123,16 +123,19 @@
     }
 
     function createSteadFastShipment(shipmentId, dialog) {
-        $.ajax({
-            url: '@Url.Action("CreateShipmentManual", "SteadFast")',
-            type: 'POST',
-            data: {
+        var postData = {
                 shipmentId: shipmentId,
                 recipientName: $('#sf-recipient-name').val(),
                 recipientPhone: $('#sf-recipient-phone').val(),
                 recipientAddress: $('#sf-recipient-address').val(),
                 codAmount: $('#sf-cod-amount').val()
-            },
+            };
+            addAntiForgeryToken(postData);
+
+        $.ajax({
+            url: '@Url.Action("CreateShipmentManual", "SteadFast")',
+            type: 'POST',
+            data: postData,
             success: function (response) {
                 if (response.success) {
                     alert('Shipment created successfully! Consignment ID: ' + response.consignmentId);

@@ -1,4 +1,4 @@
-namespace Nop.Plugin.Shipping.SteadFast;
+﻿namespace Nop.Plugin.Shipping.SteadFast;
 
 /// <summary>
 /// Represents plugin constants
@@ -43,5 +43,5 @@ public class SteadFastDefaults
     /// <summary>
     /// SteadFast API base URL
     /// </summary>
-    public const string API_BASE_URL = "https://portal.packzy.com/api/v1";
+    public const string API_BASE_URL = "https://portal.packzy.com/api/v1/{0}";
 }

@@ -21,7 +21,7 @@
                     <nop-label asp-for="ApiSecretKey" />
                 </div>
                 <div class="col-md-9">
-                    <nop-editor asp-for="ApiSecretKey" asp-template="Password" />
+                    <nop-editor asp-for="ApiSecretKey" />
                     <span asp-validation-for="ApiSecretKey"></span>
                 </div>
             </div>
@@ -216,7 +216,7 @@
     color: #333;
     cursor: pointer;
 }
-@keyframes fadeIn {
+@@keyframes fadeIn {
     from { opacity: 0; transform: translateY(-20px); }
     to { opacity: 1; transform: translateY(0); }
 }

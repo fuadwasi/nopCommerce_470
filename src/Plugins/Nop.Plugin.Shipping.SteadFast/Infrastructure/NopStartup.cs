@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Infrastructure;
 using Nop.Plugin.Shipping.SteadFast.Services;
+using Nop.Plugin.Shipping.SteadFast.Tracking;
+using Nop.Services.Shipping.Tracking;
 
 namespace Nop.Plugin.Shipping.SteadFast.Infrastructure;
 
@@ -23,6 +25,7 @@ public class NopStartup : INopStartup
         services.AddScoped<ISteadFastShipmentEventLogService, SteadFastShipmentEventLogService>();
         services.AddScoped<ISteadFastService, SteadFastService>();
         services.AddScoped<IShippingByWeightByTotalService, ShippingByWeightByTotalService>();
+        //services.AddScoped<IShipmentTracker, SteadFastShipmentTracker>();
         services.AddHttpClient();
     }
 

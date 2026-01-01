@@ -1,4 +1,4 @@
-using Nop.Core;
+﻿using Nop.Core;
 using Nop.Plugin.Shipping.SteadFast.Domain;
 
 namespace Nop.Plugin.Shipping.SteadFast.Services;
@@ -31,6 +31,17 @@ public interface ISteadFastShipmentRecordService
     /// The task result contains the shipment record
     /// </returns>
     Task<SteadFastShipmentRecord> GetShipmentRecordByShipmentIdAsync(int shipmentId);
+
+    /// <summary>
+    /// Get a SteadFast shipment record by Tracking Number
+    /// </summary>
+    /// <param name="trackingNumber">Tracking Number</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the shipment record
+    /// </returns>
+
+    Task<SteadFastShipmentRecord> GetShipmentRecordByTrackingNumberAsync(string trackingNumber);
 
     /// <summary>
     /// Get a SteadFast shipment record by order ID

@@ -1,8 +1,9 @@
-using Microsoft.AspNetCore.Routing;
+﻿using Microsoft.AspNetCore.Routing;
 using Nop.Core;
 using Nop.Core.Domain.Shipping;
 using Nop.Plugin.Shipping.SteadFast.Domain;
 using Nop.Plugin.Shipping.SteadFast.Services;
+using Nop.Plugin.Shipping.SteadFast.Tracking;
 using Nop.Services.Cms;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
@@ -28,6 +29,8 @@ public class SteadFastComputationMethod : BasePlugin, IShippingRateComputationMe
     private readonly IShippingByWeightByTotalService _shippingByWeightByTotalService;
     private readonly IShippingService _shippingService;
     private readonly IStoreContext _storeContext;
+    private readonly ISteadFastShipmentRecordService _shipmentRecordService;
+    private readonly ISteadFastShipmentEventLogService _eventLogService;
     private readonly IWebHelper _webHelper;
 
     #endregion
@@ -42,6 +45,8 @@ public class SteadFastComputationMethod : BasePlugin, IShippingRateComputationMe
         IShippingByWeightByTotalService shippingByWeightByTotalService,
         IShippingService shippingService,
         IStoreContext storeContext,
+        ISteadFastShipmentRecordService shipmentRecordService,
+        ISteadFastShipmentEventLogService eventLogService,
         IWebHelper webHelper)
     {
         _steadFastSettings = steadFastSettings;
@@ -51,6 +56,8 @@ public class SteadFastComputationMethod : BasePlugin, IShippingRateComputationMe
         _shippingByWeightByTotalService = shippingByWeightByTotalService;
         _shippingService = shippingService;
         _storeContext = storeContext;
+        _shipmentRecordService = shipmentRecordService;
+        _eventLogService = eventLogService;
         _webHelper = webHelper;
     }
 
@@ -251,9 +258,9 @@ public class SteadFastComputationMethod : BasePlugin, IShippingRateComputationMe
     /// A task that represents the asynchronous operation
     /// The task result contains the shipment tracker
     /// </returns>
-    public Task<IShipmentTracker> GetShipmentTrackerAsync()
+    public async Task<IShipmentTracker> GetShipmentTrackerAsync()
     {
-        return Task.FromResult<IShipmentTracker>(null);
+        return await Task.FromResult<IShipmentTracker>(new SteadFastShipmentTracker(_shipmentRecordService, _eventLogService));
     }
 
     /// <summary>
@@ -350,6 +357,8 @@ public class SteadFastComputationMethod : BasePlugin, IShippingRateComputationMe
         //settings
         await _settingService.DeleteSettingAsync<SteadFastSettings>();
 
+        //unregister shipment tracker is not required, handled by DI
+
         //fixed rates
         var fixedRates = await (await _shippingService.GetAllShippingMethodsAsync())
             .SelectAwait(async shippingMethod => await _settingService.GetSettingAsync(
@@ -393,7 +402,7 @@ public class SteadFastComputationMethod : BasePlugin, IShippingRateComputationMe
     /// <summary>
     /// Gets a value indicating whether to hide this plugin on the widget list page in the admin area
     /// </summary>
-    public bool HideInWidgetList => true;
+    public bool HideInWidgetList => false;
 
     #endregion
 }

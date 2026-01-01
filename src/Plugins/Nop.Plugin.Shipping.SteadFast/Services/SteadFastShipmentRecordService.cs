@@ -1,4 +1,4 @@
-using Nop.Core;
+﻿using Nop.Core;
 using Nop.Data;
 using Nop.Plugin.Shipping.SteadFast.Domain;
 
@@ -65,6 +65,23 @@ public class SteadFastShipmentRecordService : ISteadFastShipmentRecordService
 
         return await _shipmentRecordRepository.Table
             .FirstOrDefaultAsync(x => x.ShipmentId == shipmentId);
+    }
+
+    /// <summary>
+    /// Get a SteadFast shipment record by Tracking Number
+    /// </summary>
+    /// <param name="trackingNumber">Tracking Number</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the shipment record
+    /// </returns>
+    public virtual async Task<SteadFastShipmentRecord> GetShipmentRecordByTrackingNumberAsync(string trackingNumber)
+    {
+        if (string.IsNullOrEmpty(trackingNumber))
+            return null;
+
+        return await _shipmentRecordRepository.Table
+            .FirstOrDefaultAsync(x => x.TrackingNumber == trackingNumber);
     }
 
     /// <summary>
