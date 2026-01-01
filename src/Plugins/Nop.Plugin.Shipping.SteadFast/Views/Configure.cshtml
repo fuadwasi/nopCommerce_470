@@ -145,35 +145,122 @@
     </div>
 </div>
 
+<!-- Modern Modal for Notifications -->
+<div id="customModal" class="custom-modal" tabindex="-1" style="display:none;">
+    <div class="custom-modal-dialog">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <h5 class="custom-modal-title" id="customModalTitle"></h5>
+                <button type="button" class="close" id="closeCustomModal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="custom-modal-body" id="customModalBody"></div>
+            <div class="custom-modal-footer">
+                <button type="button" class="btn btn-primary" id="okCustomModal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.custom-modal {
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.custom-modal-dialog {
+    max-width: 400px;
+    width: 100%;
+}
+.custom-modal-content {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    overflow: hidden;
+    animation: fadeIn 0.2s;
+}
+.custom-modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.custom-modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+.custom-modal-body {
+    padding: 1rem;
+    font-size: 1rem;
+}
+.custom-modal-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #e5e5e5;
+    text-align: right;
+}
+.close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #333;
+    cursor: pointer;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
 <script>
+    function showCustomModal(title, message) {
+        $('#customModalTitle').text(title);
+        $('#customModalBody').html(message);
+        $('#customModal').fadeIn(150);
+    }
+    function hideCustomModal() {
+        $('#customModal').fadeOut(150);
+    }
     $(document).ready(function () {
+        $('#closeCustomModal, #okCustomModal').on('click', hideCustomModal);
+        $(document).on('keydown', function (e) {
+            if (e.key === 'Escape') hideCustomModal();
+        });
         $('#test-connection').click(function () {
             var btn = $(this);
             btn.attr('disabled', 'disabled');
-
-            var postData = {
-            };
+            var postData = {};
             addAntiForgeryToken(postData);
-
             $.ajax({
                 url: '@Url.Action("TestConnection", "SteadFast")',
                 type: 'POST',
                 data: postData,
                 success: function (data) {
                     if (data.success) {
-                        displaySuccessMessage(data.message);
+                        var msg = data.message;
                         if (data.balance) {
-                            alert('Balance: ' + data.balance);
+                            msg += '<br/><strong>Balance:</strong> ' + data.balance;
                         }
+                        showCustomModal('Success', msg);
                     } else {
-                        alert(data.message);
+                        showCustomModal('Error', data.message);
                     }
                 },
                 complete: function () {
                     btn.removeAttr('disabled');
                 },
                 error: function () {
-                    displayErrorMessage('An error occurred while testing the connection.');
+                    showCustomModal('Error', 'An error occurred while testing the connection.');
                     btn.removeAttr('disabled');
                 }
             });
