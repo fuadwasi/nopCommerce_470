@@ -1,7 +1,8 @@
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Nop.Plugin.Shipping.SteadFast.Helpers;
 using Nop.Plugin.Shipping.SteadFast.Models.Api;
 
 namespace Nop.Plugin.Shipping.SteadFast.Services;
@@ -38,14 +39,11 @@ public class SteadFastApiClient : ISteadFastApiClient
     /// <returns>HTTP client</returns>
     protected virtual HttpClient PrepareHttpClient()
     {
-        var client = _httpClientFactory.CreateClient();
-        client.BaseAddress = new Uri(SteadFastDefaults.API_BASE_URL);
-        client.DefaultRequestHeaders.Accept.Clear();
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        client.DefaultRequestHeaders.Add("Api-Key", _steadFastSettings.ApiKey);
-        client.DefaultRequestHeaders.Add("Secret-Key", _steadFastSettings.ApiSecretKey);
-        
-        return client;
+        if(string.IsNullOrEmpty(_steadFastSettings.ApiKey) ||
+           string.IsNullOrEmpty(_steadFastSettings.ApiSecretKey))
+            throw new InvalidOperationException("SteadFast API credentials are not configured.");
+
+        return SteadFastApiClientHelper.GetHttpClient(_httpClientFactory, _steadFastSettings.ApiKey, _steadFastSettings.ApiSecretKey);
     }
 
     #endregion

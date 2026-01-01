@@ -150,10 +150,15 @@
         $('#test-connection').click(function () {
             var btn = $(this);
             btn.attr('disabled', 'disabled');
-            
+
+            var postData = {
+            };
+            addAntiForgeryToken(postData);
+
             $.ajax({
                 url: '@Url.Action("TestConnection", "SteadFast")',
                 type: 'POST',
+                data: postData,
                 success: function (data) {
                     if (data.success) {
                         displaySuccessMessage(data.message);
@@ -161,7 +166,7 @@
                             alert('Balance: ' + data.balance);
                         }
                     } else {
-                        displayErrorMessage(data.message);
+                        alert(data.message);
                     }
                 },
                 complete: function () {
