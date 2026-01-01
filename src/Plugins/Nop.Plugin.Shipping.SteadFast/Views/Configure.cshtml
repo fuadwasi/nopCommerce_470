@@ -4,7 +4,72 @@
     Layout = "_ConfigurePlugin";
 }
 
-<form asp-controller="SteadFast" asp-action="Configure" method="post">
+<div class="row pb-3">
+    <div class="col-md-3">
+        <div class="onoffswitch">
+            <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="advanced-settings-mode" checked="@Model.ShippingByWeightByTotalEnabled">
+            <label class="onoffswitch-label" for="advanced-settings-mode">
+                <span class="onoffswitch-inner"
+                      data-locale-basic="@T("Plugins.Shipping.SteadFast.Fixed")"
+                      data-locale-advanced="@T("Plugins.Shipping.SteadFast.ShippingByWeight")"></span>
+                <span class="onoffswitch-switch"></span>
+            </label>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="float-right">
+            <a asp-controller="Shipping" asp-action="Methods" class="btn btn-primary">
+                <i class="fas fa-truck"></i>
+                @T("Admin.Configuration.Shipping.Methods.Manage")
+            </a>
+            <a asp-controller="Shipping" asp-action="Restrictions" class="btn btn-primary">
+                <i class="fas fa-globe"></i>
+                @T("Admin.Configuration.Shipping.Restrictions")
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function checkAdvancedSettingsMode(advanced) {
+        if (advanced) {
+            $("body").addClass("advanced-settings-mode");
+            $("body").removeClass("basic-settings-mode");
+        } else {
+            $("body").removeClass("advanced-settings-mode");
+            $("body").addClass("basic-settings-mode");
+        }
+    }
+
+    checkAdvancedSettingsMode($("#advanced-settings-mode").is(':checked'));
+    $(function() {
+        $("#advanced-settings-mode")
+            .click(function() {
+                checkAdvancedSettingsMode($(this).is(':checked'));
+
+                var postData = {
+                    value: $(this).is(':checked')
+                };
+                addAntiForgeryToken(postData);
+
+                $.ajax({
+                    cache: false,
+                    url: "@Url.Action("SaveMode", "SteadFast")",
+                    type: "POST",
+                    data: postData,
+                    dataType: "json",
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        $("#saveModeAlert").trigger("click");
+                    }
+                });
+                ensureDataTablesRendered();
+            });
+    });
+</script>
+
+<nop-alert asp-alert-id="saveModeAlert" asp-alert-message="@T("Admin.Common.Alert.Save.Error")" />
+
+<form asp-controller="SteadFast" asp-action="Configure" method="post" class="basic-setting">
     <div class="card card-default">
         <div class="card-body">
             <div class="form-group row">
@@ -50,24 +115,6 @@
                 <div class="col-md-9">
                     <nop-editor asp-for="DefaultNote" />
                     <span asp-validation-for="DefaultNote"></span>
-                </div>
-            </div>
-            <div class="form-group row">
-                <div class="col-md-3">
-                    <nop-label asp-for="ShippingByWeightByTotalEnabled" />
-                </div>
-                <div class="col-md-9">
-                    <nop-editor asp-for="ShippingByWeightByTotalEnabled" />
-                    <span asp-validation-for="ShippingByWeightByTotalEnabled"></span>
-                </div>
-            </div>
-            <div class="form-group row">
-                <div class="col-md-3">
-                    <nop-label asp-for="LimitMethodsToCreated" />
-                </div>
-                <div class="col-md-9">
-                    <nop-editor asp-for="LimitMethodsToCreated" />
-                    <span asp-validation-for="LimitMethodsToCreated"></span>
                 </div>
             </div>
             <div class="form-group row">
@@ -129,7 +176,9 @@
     </div>
 </form>
 
-<div class="card card-default">
+@await Html.PartialAsync("~/Plugins/Shipping.SteadFast/Views/_ByWeightByTotal.cshtml", Model)
+
+<div class="card card-default basic-setting">
     <div class="card-header">
         @T("Plugins.Shipping.SteadFast.ManageShipments")
     </div>

@@ -13,6 +13,7 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
     #region Fields
 
     private readonly IRepository<SteadFastShippingByWeightByTotalRecord> _shippingByWeightByTotalRepository;
+    private readonly IShortTermCacheManager _shortTermCacheManager;
     private readonly IStaticCacheManager _staticCacheManager;
     private readonly SteadFastSettings _steadFastSettings;
 
@@ -22,12 +23,84 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
 
     public ShippingByWeightByTotalService(
         IRepository<SteadFastShippingByWeightByTotalRecord> shippingByWeightByTotalRepository,
+        IShortTermCacheManager shortTermCacheManager,
         IStaticCacheManager staticCacheManager,
         SteadFastSettings steadFastSettings)
     {
         _shippingByWeightByTotalRepository = shippingByWeightByTotalRepository;
+        _shortTermCacheManager = shortTermCacheManager;
         _staticCacheManager = staticCacheManager;
         _steadFastSettings = steadFastSettings;
+    }
+
+    #endregion
+
+    #region Utilities
+
+    /// <summary>
+    /// Get filtered shipping by weight records
+    /// </summary>
+    /// <param name="shippingMethodId">Shipping method identifier</param>
+    /// <param name="storeId">Store identifier</param>
+    /// <param name="warehouseId">Warehouse identifier</param>
+    /// <param name="countryId">Country identifier</param>
+    /// <param name="stateProvinceId">State identifier</param>
+    /// <param name="zip">Zip postal code</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the list of the shipping by weight record
+    /// </returns>
+    private async Task<IList<SteadFastShippingByWeightByTotalRecord>> GetRecordsAsync(int shippingMethodId,
+        int storeId,
+        int warehouseId,
+        int countryId,
+        int stateProvinceId,
+        string zip)
+    {
+        var records = await _shippingByWeightByTotalRepository.GetAllAsync(query =>
+        {
+            //filter by shipping method
+            query = query.Where(sbw => sbw.ShippingMethodId == shippingMethodId);
+
+            //filter by store
+            query = storeId == 0
+                ? query
+                : query.Where(r => r.StoreId == storeId || r.StoreId == 0);
+
+            //filter by warehouse
+            query = warehouseId == 0
+                ? query
+                : query.Where(r => r.WarehouseId == warehouseId || r.WarehouseId == 0);
+
+            //filter by country
+            query = countryId == 0
+                ? query
+                : query.Where(r => r.CountryId == countryId || r.CountryId == 0);
+
+            //filter by state/province
+            query = stateProvinceId == 0
+                ? query
+                : query.Where(r => r.StateProvinceId == stateProvinceId || r.StateProvinceId == 0);
+
+            zip = zip?.Trim() ?? string.Empty;
+
+            //filter by zip
+            query = string.IsNullOrEmpty(zip)
+                ? query
+                : query.Where(r => string.IsNullOrEmpty(r.Zip) || r.Zip.Equals(zip));
+
+            query = query.OrderBy(sbw => sbw.StoreId)
+                .ThenBy(sbw => sbw.CountryId)
+                .ThenBy(sbw => sbw.StateProvinceId)
+                .ThenBy(sbw => sbw.Zip)
+                .ThenBy(sbw => sbw.ShippingMethodId)
+                .ThenBy(sbw => sbw.WeightFrom)
+                .ThenBy(sbw => sbw.OrderSubtotalFrom);
+
+            return query;
+        });
+
+        return records;
     }
 
     #endregion
@@ -35,165 +108,97 @@ public class ShippingByWeightByTotalService : IShippingByWeightByTotalService
     #region Methods
 
     /// <summary>
-    /// Insert shipping by weight/total record
+    /// Get a shipping by weight record by passed parameters
     /// </summary>
-    /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task InsertSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord)
+    public virtual async Task<SteadFastShippingByWeightByTotalRecord> FindRecordsAsync(int shippingMethodId, int storeId, int warehouseId,
+        int countryId, int stateProvinceId, string zip, decimal weight, decimal orderSubtotal)
     {
-        ArgumentNullException.ThrowIfNull(shippingByWeightByTotalRecord);
+        zip = zip?.Trim() ?? string.Empty;
 
-        await _shippingByWeightByTotalRepository.InsertAsync(shippingByWeightByTotalRecord);
-    }
+        var existingRates = await GetRecordsAsync(shippingMethodId, storeId, warehouseId, countryId, stateProvinceId, zip);
 
-    /// <summary>
-    /// Update shipping by weight/total record
-    /// </summary>
-    /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task UpdateSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord)
-    {
-        ArgumentNullException.ThrowIfNull(shippingByWeightByTotalRecord);
-
-        await _shippingByWeightByTotalRepository.UpdateAsync(shippingByWeightByTotalRecord);
-    }
-
-    /// <summary>
-    /// Delete shipping by weight/total record
-    /// </summary>
-    /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task DeleteSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord)
-    {
-        ArgumentNullException.ThrowIfNull(shippingByWeightByTotalRecord);
-
-        await _shippingByWeightByTotalRepository.DeleteAsync(shippingByWeightByTotalRecord);
-    }
-
-    /// <summary>
-    /// Get shipping by weight/total records
-    /// </summary>
-    /// <param name="pageIndex">Page index</param>
-    /// <param name="pageSize">Page size</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the shipping by weight/total records
-    /// </returns>
-    public virtual async Task<IPagedList<SteadFastShippingByWeightByTotalRecord>> GetAllAsync(int pageIndex = 0, int pageSize = int.MaxValue)
-    {
-        var records = await _shippingByWeightByTotalRepository.GetAllAsync(query =>
-        {
-            return from record in query
-                   orderby record.StoreId, record.CountryId, record.StateProvinceId, record.Zip,
-                       record.ShippingMethodId, record.WeightFrom, record.OrderSubtotalFrom
-                   select record;
-        });
-
-        return new PagedList<SteadFastShippingByWeightByTotalRecord>(records, pageIndex, pageSize);
-    }
-
-    /// <summary>
-    /// Find shipping by weight/total record
-    /// </summary>
-    /// <param name="shippingMethodId">Shipping method ID</param>
-    /// <param name="storeId">Store ID</param>
-    /// <param name="warehouseId">Warehouse ID</param>
-    /// <param name="countryId">Country ID</param>
-    /// <param name="stateProvinceId">State/province ID</param>
-    /// <param name="zip">Zip code</param>
-    /// <param name="weight">Weight</param>
-    /// <param name="orderSubtotal">Order subtotal</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the shipping by weight/total record
-    /// </returns>
-    public virtual async Task<SteadFastShippingByWeightByTotalRecord> FindRecordsAsync(
-        int shippingMethodId,
-        int storeId,
-        int warehouseId,
-        int countryId,
-        int stateProvinceId,
-        string zip,
-        decimal weight,
-        decimal orderSubtotal)
-    {
-        if (!_steadFastSettings.LoadAllRecord)
-        {
-            zip ??= string.Empty;
-            zip = zip.Trim();
-
-            //filter by weight and shipping method
-            var existingRates = await _shippingByWeightByTotalRepository.Table
-                .Where(record => record.ShippingMethodId == shippingMethodId && weight >= record.WeightFrom && weight <= record.WeightTo)
-                .ToListAsync();
-
-            //filter by order subtotal
-            existingRates = existingRates.Where(record => orderSubtotal >= record.OrderSubtotalFrom && orderSubtotal <= record.OrderSubtotalTo).ToList();
-
-            //filter by store
-            existingRates = existingRates.Where(record => record.StoreId == storeId || record.StoreId == 0).ToList();
-
-            //filter by warehouse
-            existingRates = existingRates.Where(record => record.WarehouseId == warehouseId || record.WarehouseId == 0).ToList();
-
-            //filter by country
-            existingRates = existingRates.Where(record => record.CountryId == countryId || record.CountryId == 0).ToList();
-
-            //filter by state/province
-            existingRates = existingRates.Where(record => record.StateProvinceId == stateProvinceId || record.StateProvinceId == 0).ToList();
-
-            //filter by zip
-            existingRates = existingRates.Where(record => string.IsNullOrEmpty(record.Zip) || record.Zip.Equals(zip, StringComparison.InvariantCultureIgnoreCase)).ToList();
-
-            //sort
-            existingRates = existingRates.OrderBy(record => record.StoreId)
-                .ThenBy(record => record.WarehouseId)
-                .ThenBy(record => record.CountryId)
-                .ThenBy(record => record.StateProvinceId)
-                .ThenBy(record => record.Zip)
-                .ToList();
-
-            return existingRates.FirstOrDefault();
-        }
-
-        //load all records to cache
-        var key = new Nop.Core.Caching.CacheKey("Nop.Plugin.Shipping.SteadFast.ShippingByWeightByTotal.All");
-        var allRecords = await _staticCacheManager.GetAsync(key, async () => await _shippingByWeightByTotalRepository.GetAllAsync(query => query));
-
-        zip ??= string.Empty;
-        zip = zip.Trim();
-
-        var foundRecords = allRecords
-            .Where(record =>
-                record.ShippingMethodId == shippingMethodId &&
-                weight >= record.WeightFrom && weight <= record.WeightTo &&
-                orderSubtotal >= record.OrderSubtotalFrom && orderSubtotal <= record.OrderSubtotalTo &&
-                (record.StoreId == storeId || record.StoreId == 0) &&
-                (record.WarehouseId == warehouseId || record.WarehouseId == 0) &&
-                (record.CountryId == countryId || record.CountryId == 0) &&
-                (record.StateProvinceId == stateProvinceId || record.StateProvinceId == 0) &&
-                (string.IsNullOrEmpty(record.Zip) || record.Zip.Equals(zip, StringComparison.InvariantCultureIgnoreCase)))
-            .OrderBy(record => record.StoreId)
-            .ThenBy(record => record.WarehouseId)
-            .ThenBy(record => record.CountryId)
-            .ThenBy(record => record.StateProvinceId)
-            .ThenBy(record => record.Zip)
+        //filter by weight and order subtotal
+        var matchedByWeightAndTotal = existingRates
+            .Where(sbw => weight >= sbw.WeightFrom && weight <= sbw.WeightTo &&
+                         orderSubtotal >= sbw.OrderSubtotalFrom && orderSubtotal <= sbw.OrderSubtotalTo)
             .ToList();
 
-        return foundRecords.FirstOrDefault();
+        //sort from particular to general, more particular cases will be the first
+        matchedByWeightAndTotal = matchedByWeightAndTotal
+            .OrderBy(r => r.StoreId == 0)
+            .ThenBy(r => r.WarehouseId == 0)
+            .ThenBy(r => r.CountryId == 0)
+            .ThenBy(r => r.StateProvinceId == 0)
+            .ThenBy(r => string.IsNullOrEmpty(r.Zip))
+            .ToList();
+
+        return matchedByWeightAndTotal.FirstOrDefault();
     }
 
     /// <summary>
-    /// Get shipping by weight/total record by ID
+    /// Filter Shipping Weight Records
     /// </summary>
-    /// <param name="id">Record ID</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the shipping by weight/total record
-    /// </returns>
-    public virtual async Task<SteadFastShippingByWeightByTotalRecord> GetByIdAsync(int id)
+    public virtual async Task<IPagedList<SteadFastShippingByWeightByTotalRecord>> FindRecordsAsync(int shippingMethodId, int storeId, int warehouseId,
+        int countryId, int stateProvinceId, string zip, decimal? weight, decimal? orderSubtotal, int pageIndex, int pageSize)
     {
-        return await _shippingByWeightByTotalRepository.GetByIdAsync(id);
+        //filter by weight
+        var existingRates =
+            (await GetRecordsAsync(shippingMethodId, storeId, warehouseId, countryId, stateProvinceId, zip))
+            .Where(sbw => !weight.HasValue || weight >= sbw.WeightFrom && weight <= sbw.WeightTo);
+
+        //filter by order subtotal
+        existingRates = !orderSubtotal.HasValue ? existingRates :
+            existingRates.Where(sbw => orderSubtotal >= sbw.OrderSubtotalFrom && orderSubtotal <= sbw.OrderSubtotalTo);
+
+        //sort from particular to general, more particular cases will be the first
+        existingRates = existingRates
+            .OrderBy(r => r.StoreId == 0)
+            .ThenBy(r => r.WarehouseId == 0)
+            .ThenBy(r => r.CountryId == 0)
+            .ThenBy(r => r.StateProvinceId == 0)
+            .ThenBy(r => string.IsNullOrEmpty(r.Zip));
+
+        var records = new PagedList<SteadFastShippingByWeightByTotalRecord>(existingRates.ToList(), pageIndex, pageSize);
+
+        return records;
+    }
+
+    /// <summary>
+    /// Get a shipping by weight record by identifier
+    /// </summary>
+    public virtual async Task<SteadFastShippingByWeightByTotalRecord> GetByIdAsync(int shippingByWeightRecordId)
+    {
+        return await _shippingByWeightByTotalRepository.GetByIdAsync(shippingByWeightRecordId, cache => default);
+    }
+
+    /// <summary>
+    /// Insert the shipping by weight record
+    /// </summary>
+    public virtual async Task InsertShippingByWeightRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightRecord)
+    {
+        ArgumentNullException.ThrowIfNull(shippingByWeightRecord);
+
+        await _shippingByWeightByTotalRepository.InsertAsync(shippingByWeightRecord);
+    }
+
+    /// <summary>
+    /// Update the shipping by weight record
+    /// </summary>
+    public virtual async Task UpdateShippingByWeightRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightRecord)
+    {
+        ArgumentNullException.ThrowIfNull(shippingByWeightRecord);
+
+        await _shippingByWeightByTotalRepository.UpdateAsync(shippingByWeightRecord);
+    }
+
+    /// <summary>
+    /// Delete the shipping by weight record
+    /// </summary>
+    public virtual async Task DeleteShippingByWeightRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightRecord)
+    {
+        ArgumentNullException.ThrowIfNull(shippingByWeightRecord);
+
+        await _shippingByWeightByTotalRepository.DeleteAsync(shippingByWeightRecord);
     }
 
     #endregion

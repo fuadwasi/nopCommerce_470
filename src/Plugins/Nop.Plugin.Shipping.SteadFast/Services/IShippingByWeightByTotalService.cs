@@ -9,69 +9,71 @@ namespace Nop.Plugin.Shipping.SteadFast.Services;
 public interface IShippingByWeightByTotalService
 {
     /// <summary>
-    /// Insert shipping by weight/total record
+    /// Get a shipping by weight record by passed parameters
     /// </summary>
-    /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    Task InsertSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord);
-
-    /// <summary>
-    /// Update shipping by weight/total record
-    /// </summary>
-    /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    Task UpdateSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord);
-
-    /// <summary>
-    /// Delete shipping by weight/total record
-    /// </summary>
-    /// <param name="shippingByWeightByTotalRecord">Shipping by weight/total record</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    Task DeleteSteadFastShippingByWeightByTotalRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightByTotalRecord);
-
-    /// <summary>
-    /// Get shipping by weight/total records
-    /// </summary>
-    /// <param name="pageIndex">Page index</param>
-    /// <param name="pageSize">Page size</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the shipping by weight/total records
-    /// </returns>
-    Task<IPagedList<SteadFastShippingByWeightByTotalRecord>> GetAllAsync(int pageIndex = 0, int pageSize = int.MaxValue);
-
-    /// <summary>
-    /// Find shipping by weight/total record
-    /// </summary>
-    /// <param name="shippingMethodId">Shipping method ID</param>
-    /// <param name="storeId">Store ID</param>
-    /// <param name="warehouseId">Warehouse ID</param>
-    /// <param name="countryId">Country ID</param>
-    /// <param name="stateProvinceId">State/province ID</param>
-    /// <param name="zip">Zip code</param>
+    /// <param name="shippingMethodId">Shipping method identifier</param>
+    /// <param name="storeId">Store identifier</param>
+    /// <param name="warehouseId">Warehouse identifier</param>
+    /// <param name="countryId">Country identifier</param>
+    /// <param name="stateProvinceId">State identifier</param>
+    /// <param name="zip">Zip postal code</param>
     /// <param name="weight">Weight</param>
     /// <param name="orderSubtotal">Order subtotal</param>
     /// <returns>
     /// A task that represents the asynchronous operation
-    /// The task result contains the shipping by weight/total record
+    /// The task result contains the shipping by weight record
     /// </returns>
-    Task<SteadFastShippingByWeightByTotalRecord> FindRecordsAsync(
-        int shippingMethodId,
-        int storeId,
-        int warehouseId,
-        int countryId,
-        int stateProvinceId,
-        string zip,
-        decimal weight,
-        decimal orderSubtotal);
+    Task<SteadFastShippingByWeightByTotalRecord> FindRecordsAsync(int shippingMethodId, int storeId, int warehouseId,
+        int countryId, int stateProvinceId, string zip, decimal weight, decimal orderSubtotal);
 
     /// <summary>
-    /// Get shipping by weight/total record by ID
+    /// Filter Shipping Weight Records
     /// </summary>
-    /// <param name="id">Record ID</param>
+    /// <param name="shippingMethodId">Shipping method identifier</param>
+    /// <param name="storeId">Store identifier</param>
+    /// <param name="warehouseId">Warehouse identifier</param>
+    /// <param name="countryId">Country identifier</param>
+    /// <param name="stateProvinceId">State identifier</param>
+    /// <param name="zip">Zip postal code</param>
+    /// <param name="weight">Weight</param>
+    /// <param name="orderSubtotal">Order subtotal</param>
+    /// <param name="pageIndex">Page index</param>
+    /// <param name="pageSize">Page size</param>
     /// <returns>
     /// A task that represents the asynchronous operation
-    /// The task result contains the shipping by weight/total record
+    /// The task result contains the list of the shipping by weight record
     /// </returns>
-    Task<SteadFastShippingByWeightByTotalRecord> GetByIdAsync(int id);
+    Task<IPagedList<SteadFastShippingByWeightByTotalRecord>> FindRecordsAsync(int shippingMethodId, int storeId, int warehouseId,
+        int countryId, int stateProvinceId, string zip, decimal? weight, decimal? orderSubtotal, int pageIndex, int pageSize);
+
+    /// <summary>
+    /// Get a shipping by weight record by identifier
+    /// </summary>
+    /// <param name="shippingByWeightRecordId">Record identifier</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the shipping by weight record
+    /// </returns>
+    Task<SteadFastShippingByWeightByTotalRecord> GetByIdAsync(int shippingByWeightRecordId);
+
+    /// <summary>
+    /// Insert the shipping by weight record
+    /// </summary>
+    /// <param name="shippingByWeightRecord">Shipping by weight record</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task InsertShippingByWeightRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightRecord);
+
+    /// <summary>
+    /// Update the shipping by weight record
+    /// </summary>
+    /// <param name="shippingByWeightRecord">Shipping by weight record</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task UpdateShippingByWeightRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightRecord);
+
+    /// <summary>
+    /// Delete the shipping by weight record
+    /// </summary>
+    /// <param name="shippingByWeightRecord">Shipping by weight record</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task DeleteShippingByWeightRecordAsync(SteadFastShippingByWeightByTotalRecord shippingByWeightRecord);
 }

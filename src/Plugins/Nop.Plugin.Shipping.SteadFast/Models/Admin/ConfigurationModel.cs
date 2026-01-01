@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
 
@@ -6,7 +7,7 @@ namespace Nop.Plugin.Shipping.SteadFast.Models.Admin;
 /// <summary>
 /// Represents a configuration model
 /// </summary>
-public record ConfigurationModel : BaseNopModel
+public record ConfigurationModel : BaseSearchModel
 {
     #region Properties
 
@@ -40,6 +41,31 @@ public record ConfigurationModel : BaseNopModel
     public string WebhookUrl { get; set; }
 
     public decimal? CurrentBalance { get; set; }
+
+    // Search filters for rate by weight by total
+    [NopResourceDisplayName("Plugins.Shipping.SteadFast.Fields.Store")]
+    public int SearchStoreId { get; set; }
+
+    [NopResourceDisplayName("Plugins.Shipping.SteadFast.Fields.Warehouse")]
+    public int SearchWarehouseId { get; set; }
+
+    [NopResourceDisplayName("Plugins.Shipping.SteadFast.Fields.Country")]
+    public int SearchCountryId { get; set; }
+
+    [NopResourceDisplayName("Plugins.Shipping.SteadFast.Fields.StateProvince")]
+    public int SearchStateProvinceId { get; set; }
+
+    [NopResourceDisplayName("Plugins.Shipping.SteadFast.Fields.Zip")]
+    public string SearchZip { get; set; }
+
+    [NopResourceDisplayName("Plugins.Shipping.SteadFast.Fields.ShippingMethod")]
+    public int SearchShippingMethodId { get; set; }
+
+    public IList<SelectListItem> AvailableCountries { get; set; } = new List<SelectListItem>();
+    public IList<SelectListItem> AvailableStates { get; set; } = new List<SelectListItem>();
+    public IList<SelectListItem> AvailableShippingMethods { get; set; } = new List<SelectListItem>();
+    public IList<SelectListItem> AvailableStores { get; set; } = new List<SelectListItem>();
+    public IList<SelectListItem> AvailableWarehouses { get; set; } = new List<SelectListItem>();
 
     #endregion
 }
