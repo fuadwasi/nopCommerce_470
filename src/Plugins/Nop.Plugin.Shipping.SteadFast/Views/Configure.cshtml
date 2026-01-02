@@ -1,0 +1,318 @@
+@model ConfigurationModel
+
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<div class="row pb-3">
+    <div class="col-md-3">
+        <div class="onoffswitch">
+            <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="advanced-settings-mode" checked="@Model.ShippingByWeightByTotalEnabled">
+            <label class="onoffswitch-label" for="advanced-settings-mode">
+                <span class="onoffswitch-inner"
+                      data-locale-basic="@T("Plugins.Shipping.SteadFast.Fixed")"
+                      data-locale-advanced="@T("Plugins.Shipping.SteadFast.ShippingByWeight")"></span>
+                <span class="onoffswitch-switch"></span>
+            </label>
+        </div>
+    </div>
+    <div class="col-md-9">
+        <div class="float-right">
+            <a asp-controller="Shipping" asp-action="Methods" class="btn btn-primary">
+                <i class="fas fa-truck"></i>
+                @T("Admin.Configuration.Shipping.Methods.Manage")
+            </a>
+            <a asp-controller="Shipping" asp-action="Restrictions" class="btn btn-primary">
+                <i class="fas fa-globe"></i>
+                @T("Admin.Configuration.Shipping.Restrictions")
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function checkAdvancedSettingsMode(advanced) {
+        if (advanced) {
+            $("body").addClass("advanced-settings-mode");
+            $("body").removeClass("basic-settings-mode");
+        } else {
+            $("body").removeClass("advanced-settings-mode");
+            $("body").addClass("basic-settings-mode");
+        }
+    }
+
+    checkAdvancedSettingsMode($("#advanced-settings-mode").is(':checked'));
+    $(function() {
+        $("#advanced-settings-mode")
+            .click(function() {
+                checkAdvancedSettingsMode($(this).is(':checked'));
+
+                var postData = {
+                    value: $(this).is(':checked')
+                };
+                addAntiForgeryToken(postData);
+
+                $.ajax({
+                    cache: false,
+                    url: "@Url.Action("SaveMode", "SteadFast")",
+                    type: "POST",
+                    data: postData,
+                    dataType: "json",
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        $("#saveModeAlert").trigger("click");
+                    }
+                });
+                ensureDataTablesRendered();
+            });
+    });
+</script>
+
+<nop-alert asp-alert-id="saveModeAlert" asp-alert-message="@T("Admin.Common.Alert.Save.Error")" />
+
+<form asp-controller="SteadFast" asp-action="Configure" method="post" class="basic-setting">
+    <div class="card card-default">
+        <div class="card-body">
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="ApiKey" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="ApiKey" />
+                    <span asp-validation-for="ApiKey"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="ApiSecretKey" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="ApiSecretKey" />
+                    <span asp-validation-for="ApiSecretKey"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="UseSandbox" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="UseSandbox" />
+                    <span asp-validation-for="UseSandbox"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="AutoCreateShipment" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="AutoCreateShipment" />
+                    <span asp-validation-for="AutoCreateShipment"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="DefaultNote" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="DefaultNote" />
+                    <span asp-validation-for="DefaultNote"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="WebhookEnabled" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="WebhookEnabled" />
+                    <span asp-validation-for="WebhookEnabled"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-label asp-for="WebhookSecret" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="WebhookSecret" />
+                    <span asp-validation-for="WebhookSecret"></span>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.WebhookUrl))
+            {
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <label class="col-form-label">Webhook URL</label>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="form-text-row">
+                            <input type="text" readonly class="form-control" value="@Model.WebhookUrl" onclick="this.select()" />
+                            <small class="form-text text-muted">Copy this URL and add it to your SteadFast merchant portal webhook settings.</small>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (Model.CurrentBalance.HasValue)
+            {
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <label class="col-form-label">Current Balance</label>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="form-text-row">@Model.CurrentBalance.Value.ToString("C")</div>
+                    </div>
+                </div>
+            }
+            <div class="form-group row">
+                <div class="col-md-9 offset-md-3">
+                    <button type="button" id="test-connection" class="btn btn-secondary">
+                        <i class="fas fa-plug"></i>
+                        @T("Plugins.Shipping.SteadFast.TestConnection")
+                    </button>
+                    <button type="submit" name="save" class="btn btn-primary">
+                        <i class="far fa-save"></i>
+                        @T("Admin.Common.Save")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@await Html.PartialAsync("~/Plugins/Shipping.SteadFast/Views/_ByWeightByTotal.cshtml", Model)
+
+<div class="card card-default basic-setting">
+    <div class="card-header">
+        @T("Plugins.Shipping.SteadFast.ManageShipments")
+    </div>
+    <div class="card-body">
+        <div class="form-group row">
+            <div class="col-md-12">
+                <a asp-controller="SteadFast" asp-action="ShipmentList" class="btn btn-primary">
+                    <i class="fas fa-list"></i>
+                    @T("Plugins.Shipping.SteadFast.ManageShipments")
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modern Modal for Notifications -->
+<div id="customModal" class="custom-modal" tabindex="-1" style="display:none;">
+    <div class="custom-modal-dialog">
+        <div class="custom-modal-content">
+            <div class="custom-modal-header">
+                <h5 class="custom-modal-title" id="customModalTitle"></h5>
+                <button type="button" class="close" id="closeCustomModal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="custom-modal-body" id="customModalBody"></div>
+            <div class="custom-modal-footer">
+                <button type="button" class="btn btn-primary" id="okCustomModal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.custom-modal {
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.custom-modal-dialog {
+    max-width: 400px;
+    width: 100%;
+}
+.custom-modal-content {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    overflow: hidden;
+    animation: fadeIn 0.2s;
+}
+.custom-modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.custom-modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+.custom-modal-body {
+    padding: 1rem;
+    font-size: 1rem;
+}
+.custom-modal-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #e5e5e5;
+    text-align: right;
+}
+.close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    line-height: 1;
+    color: #333;
+    cursor: pointer;
+}
+@@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<script>
+    function showCustomModal(title, message) {
+        $('#customModalTitle').text(title);
+        $('#customModalBody').html(message);
+        $('#customModal').fadeIn(150);
+    }
+    function hideCustomModal() {
+        $('#customModal').fadeOut(150);
+    }
+    $(document).ready(function () {
+        $('#closeCustomModal, #okCustomModal').on('click', hideCustomModal);
+        $(document).on('keydown', function (e) {
+            if (e.key === 'Escape') hideCustomModal();
+        });
+        $('#test-connection').click(function () {
+            var btn = $(this);
+            btn.attr('disabled', 'disabled');
+            var postData = {};
+            addAntiForgeryToken(postData);
+            $.ajax({
+                url: '@Url.Action("TestConnection", "SteadFast")',
+                type: 'POST',
+                data: postData,
+                success: function (data) {
+                    if (data.success) {
+                        var msg = data.message;
+                        if (data.balance) {
+                            msg += '<br/><strong>Balance:</strong> ' + data.balance;
+                        }
+                        showCustomModal('Success', msg);
+                    } else {
+                        showCustomModal('Error', data.message);
+                    }
+                },
+                complete: function () {
+                    btn.removeAttr('disabled');
+                },
+                error: function () {
+                    showCustomModal('Error', 'An error occurred while testing the connection.');
+                    btn.removeAttr('disabled');
+                }
+            });
+        });
+    });
+</script>
